@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
 
+# Third-party actions are pinned by commit SHA, not by tag. Tags are mutable:
+# in March 2026 most aquasecurity/trivy-action tags were force-pushed to malware.
 permissions:
   contents: read
 
@@ -17,8 +19,8 @@ jobs:
     name: terraform fmt + validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: 1.9.8
       - name: fmt
@@ -36,8 +38,8 @@ jobs:
     name: checkov (IaC + Kubernetes)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: bridgecrewio/checkov-action@v12
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: bridgecrewio/checkov-action@b17b606d6ec72bb8ba5721ad5b7e340b80a9fc39 # v12
         with:
           directory: .
           config_file: .checkov.yaml
@@ -46,8 +48,8 @@ jobs:
     name: trivy misconfiguration scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.28.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
           scan-ref: .
@@ -59,7 +61,7 @@ jobs:
     name: kubeconform + conftest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: kubeconform
         run: |
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
@@ -77,8 +79,8 @@ jobs:
       run:
         working-directory: services/rag-api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
           cache: pip
@@ -90,7 +92,7 @@ jobs:
       - name: build image
         run: docker build -t rag-api:${{ github.sha }} .
       - name: trivy image scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: rag-api:${{ github.sha }}
           severity: HIGH,CRITICAL

@@ -8,12 +8,8 @@ terraform {
   }
 }
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
 locals {
-  azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  azs = var.azs
 }
 
 module "vpc" {

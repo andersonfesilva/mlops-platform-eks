@@ -14,14 +14,13 @@ variable "cidr" {
   }
 }
 
-variable "az_count" {
-  description = "Number of availability zones to span."
-  type        = number
-  default     = 3
+variable "azs" {
+  description = "Availability zones to span, listed explicitly so the layout never changes when AWS adds a zone."
+  type        = list(string)
 
   validation {
-    condition     = var.az_count >= 2 && var.az_count <= 3
-    error_message = "az_count must be 2 or 3."
+    condition     = length(var.azs) >= 2 && length(var.azs) <= 3
+    error_message = "azs must list 2 or 3 availability zones."
   }
 }
 

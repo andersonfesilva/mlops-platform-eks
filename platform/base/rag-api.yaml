@@ -27,6 +27,7 @@ spec:
         app.kubernetes.io/name: rag-api
     spec:
       serviceAccountName: rag-api
+      automountServiceAccountToken: false
       nodeSelector:
         workload: system
       securityContext:

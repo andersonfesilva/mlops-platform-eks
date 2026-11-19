@@ -12,3 +12,6 @@ skip-check:
   - CKV_K8S_43
   # imagePullPolicy IfNotPresent is safe with immutable tags and avoids pulls on every restart.
   - CKV_K8S_15
+  # Registry modules (terraform-aws-modules/*) cannot be referenced by commit hash; they are
+  # pinned by version constraint and locked by .terraform.lock.hcl at init time.
+  - CKV_TF_1

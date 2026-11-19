@@ -22,6 +22,12 @@ resource "aws_kms_key" "eks_secrets" {
 # Key administration stays with the account (IAM policies decide who can use the key).
 # The EKS cluster role gets kms:Encrypt/Decrypt through the policy the eks module attaches.
 data "aws_iam_policy_document" "eks_secrets_key" {
+  # In a KMS key policy, Resource "*" means "this key" and kms:* for the account root is the
+  # AWS-documented default that delegates access control to IAM. Checkov evaluates it as an
+  # identity policy, hence the skips.
+  #checkov:skip=CKV_AWS_109:Key policy - "*" is scoped to this key; root delegation to IAM is the AWS default
+  #checkov:skip=CKV_AWS_111:Key policy - "*" is scoped to this key; root delegation to IAM is the AWS default
+  #checkov:skip=CKV_AWS_356:Key policy - "*" is scoped to this key; root delegation to IAM is the AWS default
   statement {
     sid       = "AccountRootFullAccess"
     effect    = "Allow"
