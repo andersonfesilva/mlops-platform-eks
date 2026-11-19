@@ -1,0 +1,54 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8shardenedcontainers
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sHardenedContainers
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8shardenedcontainers
+
+        containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        violation[{"msg": msg}] {
+          c := containers[_]
+          c.securityContext.privileged == true
+          msg := sprintf("container <%v> must not be privileged", [c.name])
+        }
+
+        violation[{"msg": msg}] {
+          c := containers[_]
+          not c.securityContext.allowPrivilegeEscalation == false
+          msg := sprintf("container <%v> must set securityContext.allowPrivilegeEscalation=false", [c.name])
+        }
+
+        violation[{"msg": msg}] {
+          c := containers[_]
+          not drops_all(c)
+          msg := sprintf("container <%v> must drop ALL capabilities", [c.name])
+        }
+
+        violation[{"msg": msg}] {
+          c := containers[_]
+          not c.resources.limits.memory
+          msg := sprintf("container <%v> must set a memory limit", [c.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostNetwork == true
+          msg := "pods must not use hostNetwork"
+        }
+
+        drops_all(c) {
+          c.securityContext.capabilities.drop[_] == "ALL"
+        }

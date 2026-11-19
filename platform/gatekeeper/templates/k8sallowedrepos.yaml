@@ -1,0 +1,49 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sallowedrepos
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAllowedRepos
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            repos:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sallowedrepos
+
+        containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        containers[c] {
+          c := input.review.object.spec.ephemeralContainers[_]
+        }
+
+        violation[{"msg": msg}] {
+          c := containers[_]
+          not allowed(c.image)
+          msg := sprintf("container <%v> uses image <%v>, which is not from an allowed registry: %v", [c.name, c.image, input.parameters.repos])
+        }
+
+        violation[{"msg": msg}] {
+          c := containers[_]
+          endswith(c.image, ":latest")
+          msg := sprintf("container <%v> uses the mutable tag :latest", [c.name])
+        }
+
+        allowed(image) {
+          startswith(image, input.parameters.repos[_])
+        }

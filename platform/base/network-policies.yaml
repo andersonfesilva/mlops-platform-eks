@@ -1,0 +1,133 @@
+# Zero-trust network baseline (enforced by the VPC CNI network policy agent).
+# 1. Deny all ingress and egress by default in both namespaces.
+# 2. Allow DNS.
+# 3. Allow only rag-api -> LLM predictor on 8080.
+# 4. Allow rag-api egress to HTTPS (S3 corpus, STS for IRSA). The instance metadata
+#    service (169.254.169.254) stays blocked.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: rag
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: inference
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: rag
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: inference
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rag-api-egress
+  namespace: rag
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rag-api
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: inference
+          podSelector:
+            matchLabels:
+              serving.kserve.io/inferenceservice: llm
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32
+      ports:
+        - { protocol: TCP, port: 443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: llm-ingress-from-rag
+  namespace: inference
+spec:
+  podSelector:
+    matchLabels:
+      serving.kserve.io/inferenceservice: llm
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: rag
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: rag-api
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+# The model server downloads weights from Hugging Face over HTTPS at startup.
+# In production, mirror weights to S3 and replace this with a VPC endpoint.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: llm-egress-model-download
+  namespace: inference
+spec:
+  podSelector:
+    matchLabels:
+      serving.kserve.io/inferenceservice: llm
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32
+      ports:
+        - { protocol: TCP, port: 443 }

@@ -1,0 +1,22 @@
+# Terraform / Terragrunt
+.terraform/
+.terragrunt-cache/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+backend.tf
+provider.tf
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets and local config
+.env
+*.pem
+*.key
+kubeconfig*

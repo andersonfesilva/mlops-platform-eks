@@ -1,0 +1,46 @@
+# LLM served by KServe's Hugging Face runtime, which uses vLLM as its backend
+# and exposes an OpenAI-compatible API under /openai/v1.
+# RawDeployment mode: plain Deployment + Service, no Knative/Istio dependency.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: llm
+  namespace: inference
+  annotations:
+    serving.kserve.io/deploymentMode: RawDeployment
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    nodeSelector:
+      workload: inference
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    model:
+      modelFormat:
+        name: huggingface
+      args:
+        - --model_name=llm
+        - --model_id=Qwen/Qwen2.5-1.5B-Instruct
+        - --max_model_len=4096
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "2"
+          memory: 12Gi
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "4"
+          memory: 16Gi
+          nvidia.com/gpu: "1"

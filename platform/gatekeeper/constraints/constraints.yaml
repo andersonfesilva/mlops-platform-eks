@@ -1,0 +1,29 @@
+# Application images must come from the account's private ECR.
+# The inference namespace is excluded because KServe pulls its runtime image
+# (kserve/huggingfaceserver) from Docker Hub. Mirroring it to ECR is on the roadmap.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAllowedRepos
+metadata:
+  name: rag-images-from-ecr
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["rag"]
+  parameters:
+    repos:
+      - "111111111111.dkr.ecr.us-east-1.amazonaws.com/"
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sHardenedContainers
+metadata:
+  name: hardened-workloads
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["rag", "inference"]

@@ -1,0 +1,14 @@
+# Checkov configuration. Every skipped check is listed with its reason; skips are
+# reviewed in pull requests like any other code change.
+compact: true
+quiet: true
+framework:
+  - terraform
+  - kubernetes
+  - dockerfile
+  - github_actions
+skip-check:
+  # Images are pinned to immutable semver tags in v0.1; digest pinning is on the roadmap.
+  - CKV_K8S_43
+  # imagePullPolicy IfNotPresent is safe with immutable tags and avoids pulls on every restart.
+  - CKV_K8S_15
