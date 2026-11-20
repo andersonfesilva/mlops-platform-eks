@@ -1,2 +1,8 @@
-# Accepted findings. Each entry needs a reason and an owner.
-# (empty in v0.1)
+# Accepted findings. Every entry needs a reason, an owner and an expiry date.
+
+# AWS-0104: the EKS module's recommended node security group rule allows egress to 0.0.0.0/0.
+# Nodes need outbound HTTPS through the NAT gateway to pull images and reach AWS APIs.
+# Pod-level egress is restricted by NetworkPolicies (platform/base/network-policies.yaml).
+# Fix planned: VPC endpoints (ECR, S3, STS, CloudWatch) + node egress limited to the VPC CIDR.
+# Owner: @andersonfesilva
+AWS-0104 exp:2027-05-31

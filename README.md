@@ -127,6 +127,7 @@ Being explicit about what this is not:
 - [ ] GuardDuty EKS Runtime Monitoring + Security Hub findings wired to alerts
 - [ ] Image signing (cosign) and signature verification at admission
 - [ ] Pin images and GitHub Actions by digest
+- [ ] VPC endpoints (ECR, S3, STS, CloudWatch) and node egress limited to the VPC CIDR (closes the accepted Trivy finding AWS-0104)
 - [ ] Mirror KServe runtime and model weights to ECR/S3; remove internet egress from `inference`
 - [ ] Embedding-based retrieval (pgvector or OpenSearch)
 - [ ] Evaluation suite for answer grounding and injection resistance
