@@ -85,7 +85,7 @@ platform/
   kserve/             LLM InferenceService (Hugging Face runtime / vLLM)
 policies/kubernetes/  conftest policies + unit tests (shift-left copy of the admission rules)
 services/rag-api/     FastAPI service, guardrails, retriever, tests, Dockerfile
-docs/                 architecture, threat model, ADRs
+docs/                 architecture, threat model, ADRs, deploy runbook with cost estimate
 ```
 
 ## Getting started
@@ -99,17 +99,20 @@ pip install -r requirements-dev.txt
 pytest -q
 ```
 
-**Deploy to a sandbox account** (costs money: NAT gateway, EKS control plane, GPU spot node):
+**Deploy to a sandbox account:** follow [docs/runbook-deploy.md](docs/runbook-deploy.md). It covers prerequisites (budget alert, GPU spot quota), configuration, add-ons, the demo, and a destroy checklist.
 
-```bash
-# 1. Set your account ID in infra/live/dev/env.hcl and your admin role in infra/live/dev/eks/terragrunt.hcl
-# 2. Create the state bucket and lock table referenced in infra/live/root.hcl
-cd infra/live/dev && terragrunt run-all apply
-# 3. Install Gatekeeper and KServe (RawDeployment mode), then:
-kubectl apply -f platform/base/namespaces.yaml
-kubectl apply -f platform/gatekeeper/templates/ && kubectl apply -f platform/gatekeeper/constraints/
-kubectl apply -f platform/base/ -f platform/kserve/
-```
+## Cost
+
+Estimated for `us-east-1` (November 2026 prices; spot varies hourly). Full breakdown in the [runbook](docs/runbook-deploy.md#1-cost-estimate).
+
+| Scenario | Estimate |
+| --- | --- |
+| Run rate with the GPU node running | ~$0.85-1.00 / hour |
+| Run rate with the GPU node scaled to 0 | ~$0.36 / hour |
+| Demo day: apply, ~3 h of GPU, destroy the same day | **$5-10** |
+| Forgotten for a month with the GPU running | **~$650+** |
+
+The control plane, NAT gateway and system nodes cost money even when idle. Set an AWS Budget alert before you apply and destroy the same day.
 
 ## Limitations
 
@@ -123,7 +126,7 @@ Being explicit about what this is not:
 
 ## Roadmap
 
-- [ ] End-to-end apply in a sandbox account, with cost notes
+- [ ] End-to-end apply in a sandbox account (runbook and cost estimate ready: [docs/runbook-deploy.md](docs/runbook-deploy.md))
 - [ ] GuardDuty EKS Runtime Monitoring + Security Hub findings wired to alerts
 - [ ] Image signing (cosign) and signature verification at admission
 - [ ] Pin images and GitHub Actions by digest
